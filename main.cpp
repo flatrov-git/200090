@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <limits>
+#include <fstream>
 
 using namespace std;
 
@@ -16,6 +17,11 @@ using namespace std;
 #define CYAN "\033[36m"
 #define GRAY "\033[90m"
 
+// LENGTH RULES
+
+#define MIN_LENGTH 3
+#define MAX_LENGTH 15
+
 
 // STRACTURES //
 
@@ -24,15 +30,18 @@ using namespace std;
 
 void init();
 void login();
+void registerUser();
+bool isUsernameTaken(string username);
+bool isLogin(string username, string password);
 
 template <typename T> T read(string prompt);
 string margin();
 void logo();
-void ioFunc(auto &variable, auto question);
 void menu(vector<string> options);
 void print(auto text, vector<string> options);
 void lineSpacing(int number);
 void inValidInput(string errorMassage);
+void minMaxRule(int minLength, int maxLength, string &variable);
 
 int main() {
 
@@ -44,17 +53,18 @@ int main() {
 // DEFINITION FUNCTIONS //
 
 void init() {
+    system("cls");
     logo();
-    menu({"Login", "Sign-Up"});
+    menu({"Login", "Register"});
     lineSpacing(1);
 
     while(true) {
         switch(read<int>("Please Choose An Option: ")) {
             case 1:
-                print("login", {"text", WHITE});
+                login();
                 return;
             case 2:
-                print("sign-up", {"text", WHITE});
+                registerUser();
                 return;
             default:
                 inValidInput("Invalid Input. Please Try Again.");
@@ -64,14 +74,88 @@ void init() {
 }
 
 void login() {
+    system("cls");
     logo();
     print("LOGIN", {"text", CYAN});
     lineSpacing(2);
-    string username, password;
 
-    ioFunc(username, "Please Enter Your Username: ");
+    string username = read<string>("Please Enter Your Username: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, username);
     lineSpacing(1);
-    ioFunc(password, "Please Enter Your Password: ");
+    string password = read<string>("Please Enter Your Password: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, password);
+
+    if(isLogin(username, password)) {
+        print("login", {"text", GREEN});
+    }else {
+        system("cls");
+        print("The Username Or Password Is Incorrect", {"text", RED});
+        lineSpacing(2);
+        menu({"Try Again", "Register"});
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1:
+                    login();
+                    return;
+                case 2:
+                    registerUser();
+                    return;
+                default:
+                inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+}
+
+void registerUser() {
+    system("cls");
+    logo();
+    print("REGISTER", {"text", CYAN});
+    lineSpacing(2);
+
+    string username, password, type = "USER";
+    username = read<string>("Please Create Your Username: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, username);
+
+    while(isUsernameTaken(username)) {
+        lineSpacing(1);
+        print("Username Is Already Taken", {"text", RED});
+        lineSpacing(2);
+        username = read<string>("Please Create Your Username: ");
+    }
+
+    lineSpacing(1);
+    password = read<string>("Please Create Your Password: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, password);
+
+    ofstream usersFile("users.txt", ios::app);
+    usersFile << username << " " << password << " " << type << '\n';
+
+}
+
+bool isUsernameTaken(string username) {
+    ifstream usersFile("users.txt");
+    string fileUsername, filePassword, fileType;
+
+    while(usersFile >> fileUsername >> filePassword >> fileType) {
+        if(fileUsername == username)
+            return true;
+    }
+
+    return false;
+}
+
+bool isLogin(string username, string password) {
+    ifstream usersFile("users.txt");
+    string fileUsername, filePassword, fileType;
+
+    while(usersFile >> fileUsername >> filePassword >> fileType) {
+        if(fileUsername == username && filePassword == password)
+            return true;
+    }
+
+    return false;
 }
 
 template <typename T>
@@ -114,11 +198,6 @@ void logo() {
     lineSpacing(5);
 }
 
-void ioFunc(auto &variable, auto question) {
-    print(question, {"text", YELLOW});
-    cin >> variable;
-}
-
 void menu(vector<string> options) {
     int counter = 1;
 
@@ -146,4 +225,22 @@ void inValidInput(string errorMassage){
     lineSpacing(1);
     print(errorMassage, {"text", RED});
     lineSpacing(2);
+}
+
+void minMaxRule(int minLength, int maxLength, string &variable) {
+    int lengthVar = variable.length();
+
+    while(minLength > lengthVar || maxLength < lengthVar) {
+        lineSpacing(1);
+
+        if(minLength > lengthVar) {
+            print("Input Length must Be Greater Than " + to_string(minLength), {"text", RED});
+        }else {
+            print("Input Length must Be Less Than " + to_string(maxLength), {"text", RED});
+        }
+
+        lineSpacing(2);
+        variable = read<string>("Please Try Again: ");
+        lengthVar = variable.length();
+    }
 }
