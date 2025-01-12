@@ -54,8 +54,12 @@ string organizingTournament();
 void activeTournament();
 void disableTournament();
 void deleteAllGames();
+void editGames();
+void changeStateGame(int index);
 void dashboardUser();
-void clearTextfile(string nameFile);
+void gamePrediction();
+void getGamePrediction();
+void exit();
 
 template <typename T> T read(string prompt);
 string margin();
@@ -66,6 +70,7 @@ void lineSpacing(int number);
 void inValidInput(string errorMassage);
 void minMaxRule(int minLength, int maxLength, string &variable);
 void minMaxRule(int minLength, int maxLength, int &variable);
+void clearTextfile(string nameFile);
 string capitalizeText(string text);
 int intLength(int number);
 bool isPowerTwo(int number);
@@ -290,7 +295,7 @@ void dashboardAdmin() {
     logo();
     print("Welcome back " + userData[0].username, {"text", GREEN});
     lineSpacing(3);
-    menu({"Handling Tournament", "Edit Tournament Games", "Exit"});
+    menu({"Handling Tournament", "Change Information Of Tournament Games", "Exit"});
     lineSpacing(1);
 
     while(true) {
@@ -299,9 +304,10 @@ void dashboardAdmin() {
                 tournamentHandler();
                 return;
             case 2:
-                cout << "dashboardUser";
+                editGames();
                 return;
             case 3:
+                exit();
                 return;
             default:
                 inValidInput("Invalid Input. Please Try Again.");
@@ -313,7 +319,7 @@ void dashboardAdmin() {
 void tournamentHandler() {
     system("cls");
     getGames();
-    print(dynamicTable(games, {"Team One", "Team Two", "Result", "Status"}, {0,1,2,3}), {"text", WHITE});
+    print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
     lineSpacing(2);
 
     if(organizingTournament() == "DISABLE") {
@@ -361,11 +367,11 @@ void tournamentHandler() {
 void getGames() {
     games.clear();
     ifstream gamesFile("games.txt");
-    string teamOne, teamTwo, goalTeamOne, goalTeamTwo, status;
+    string teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode;
     int counter = 1;
 
-    while(gamesFile >> teamOne >> teamTwo >> goalTeamOne >> goalTeamTwo >> status) {
-        games.push_back({teamOne, teamTwo, goalTeamOne + " : " + goalTeamTwo, status});
+    while(gamesFile >> teamOne >> teamTwo >> goalTeamOne >> goalTeamTwo >> mode) {
+        games.push_back({teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode});
         counter++;
     }
 
@@ -423,7 +429,7 @@ void activeTournament() {
     system("cls");
 
     if(isPowerTwo(games.size())) {
-        print(dynamicTable(games, {"Team One", "Team Two", "Result", "Status"}, {0,1,2,3}), {"text", WHITE});
+        print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
         lineSpacing(2);
 
         menu({"Yes", "No"});
@@ -448,7 +454,7 @@ void activeTournament() {
         }
 
     }else {
-        print("The Number Of Teams must Be a Power Of Two", {"error", RED});
+        print("The Number Of Teams must Be A Power Of Two", {"error", RED});
         lineSpacing(2);
 
         menu({"Add New Game", "Go Back"});
@@ -539,10 +545,150 @@ void deleteAllGames() {
     }
 }
 
+void editGames() {
+    system("cls");
+
+    if(organizingTournament() == "ACTIVE") {
+        getGames();
+        print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
+        lineSpacing(2);
+
+        int gameId = read<int>("Select The Game You Want To Change (Between 1 To " + to_string(games.size()) + ") : ");
+        minMaxRule(1, games.size(), gameId);
+        int index = gameId - 1;
+
+        if(games[index][4] == "FINISHED") {
+            system("cls");
+            lineSpacing(1);
+            print("The Selected Game Is Over", {"error", RED});
+            lineSpacing(2);
+            menu({"Try Again", "Go Back"});
+            lineSpacing(1);
+
+            while(true) {
+                switch(read<int>("Please Choose An Option: ")) {
+                    case 1: {
+                        editGames();
+                        return;
+                    }
+                    case 2:
+                        dashboardAdmin();
+                        return;
+                    default:
+                        inValidInput("Invalid Input. Please Try Again.");
+                }
+            }
+        }
+
+        system("cls");
+        int goalTeamOne = read<int>("Please Enter Team One Goals: ");
+        minMaxRule(stoi(games[index][2]), 30, goalTeamOne);
+        lineSpacing(1);
+        int goalTeamTwo = read<int>("Please Enter Team Two Goals: ");
+        minMaxRule(stoi(games[index][3]), 30, goalTeamTwo);
+        lineSpacing(2);
+
+        changeStateGame(index);
+        games[index][2] = to_string(goalTeamOne);
+        games[index][3] = to_string(goalTeamTwo);
+
+        clearTextfile("games.txt");
+        ofstream gamesFile("games.txt");
+        for(vector<string> a: games) {
+            gamesFile << a[0] << " " << a[1] << " " << a[2] << " " << a[3] << " " << a[4] << '\n';
+        }
+
+        gamesFile.close();
+        dashboardAdmin();
+
+    }else {
+        print("There Is No Active Tournament", {"error", RED});
+        lineSpacing(2);
+
+        menu({"Handling Tournament", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Are You Sure To Active The Tournament: ")) {
+                case 1:
+                    tournamentHandler();
+                    return;
+                case 2:
+                    dashboardAdmin();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+}
+
+void changeStateGame(int index) {
+    menu({"Yes", "No"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Do You Want To Change The State Of The Game: ")) {
+            case 1: {
+                games[index][4] = "FINISHED";
+                return;
+            }
+            case 2:
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+}
+
 void dashboardUser() {
     system("cls");
     logo();
-    cout << "dashboardUser";
+    print("Welcome back " + userData[0].username, {"text", GREEN});
+    lineSpacing(3);
+    menu({"Game Prediction", "My Points", "Exit"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Please Choose An Option: ")) {
+            case 1: {
+                if(organizingTournament() == "ACTIVE") {
+                    gamePrediction();
+                    return;
+                }else {
+                    lineSpacing(1);
+                    print("There Is No Active Tournament", {"error", RED});
+                    lineSpacing(2);
+                    break;
+                }
+            }
+            case 2:
+                cout << "My Points";
+                return;
+            case 3:
+                exit();
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+}
+
+void gamePrediction() {
+    system("cls");
+    getGames();
+    print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
+    lineSpacing(2);
+}
+
+void getGamePrediction() {
+
+}
+
+void exit() {
+    system("cls");
+    userData.clear();
+    init();
 }
 
 void clearTextfile(string nameFile) {
@@ -625,11 +771,10 @@ void minMaxRule(int minLength, int maxLength, string &variable) {
     while(minLength > lengthVar || maxLength < lengthVar) {
         lineSpacing(1);
 
-        if(minLength > lengthVar) {
+        if(minLength > lengthVar)
             print("Input Length must Be Greater Than " + to_string(minLength), {"text", RED});
-        }else {
+        else
             print("Input Length must Be Less Than " + to_string(maxLength), {"text", RED});
-        }
 
         lineSpacing(2);
         variable = read<string>("Please Try Again: ");
@@ -637,21 +782,17 @@ void minMaxRule(int minLength, int maxLength, string &variable) {
     }
 }
 
-void minMaxRule(int minLength, int maxLength, int &variable) {
-    int lengthVar = intLength(variable);
-
-    while(minLength > lengthVar || maxLength < lengthVar) {
+void minMaxRule(int minAmount, int maxAmount, int &variable) {
+    while(minAmount > variable || maxAmount < variable) {
         lineSpacing(1);
 
-        if(minLength > lengthVar) {
-            print("Input Length must Be Greater Than " + to_string(minLength), {"text", RED});
-        }else {
-            print("Input Length must Be Less Than " + to_string(maxLength), {"text", RED});
-        }
+        if(minAmount > variable)
+            print("Input Amount must Be Greater Than " + to_string(minAmount), {"text", RED});
+        else
+            print("Input Amount must Be Less Than " + to_string(maxAmount), {"text", RED});
 
         lineSpacing(2);
         variable = read<int>("Please Try Again: ");
-        lengthVar = intLength(variable);
     }
 }
 
