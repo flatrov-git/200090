@@ -25,6 +25,16 @@ using namespace std;
 
 // STRACTURES //
 
+struct userDataType {
+  string username;
+  string type;
+};
+
+
+// -------- GLOBAL VARIABLE -------- //
+
+vector<userDataType> userData;
+vector<vector<string>> games;
 
 // DECLARATION FUNCTIONS //
 
@@ -33,6 +43,19 @@ void login();
 void registerUser();
 bool isUsernameTaken(string username);
 bool isLogin(string username, string password);
+string typeClient(string username);
+void setUserData(string username, string type);
+void home();
+void dashboardAdmin();
+void tournamentHandler();
+void getGames();
+void addNewGame();
+string organizingTournament();
+void activeTournament();
+void disableTournament();
+void deleteAllGames();
+void dashboardUser();
+void clearTextfile(string nameFile);
 
 template <typename T> T read(string prompt);
 string margin();
@@ -42,6 +65,78 @@ void print(auto text, vector<string> options);
 void lineSpacing(int number);
 void inValidInput(string errorMassage);
 void minMaxRule(int minLength, int maxLength, string &variable);
+void minMaxRule(int minLength, int maxLength, int &variable);
+string capitalizeText(string text);
+int intLength(int number);
+bool isPowerTwo(int number);
+string dynamicTable(vector<vector<string>> data, vector<string> rows, vector<int> columns, bool (*filter) (const vector<string>&) = nullptr, bool addNumbers = true, string indent = "   ") {
+    string content = "\n";
+    string betweenSpace = "  ";
+    vector<int> rowsLength;
+    vector<int> biggestColName;
+
+    for (int i = 0; i < rows.size(); i++) {
+        rowsLength.push_back(rows[i].length());
+    }
+
+    for (int i = 0; i < columns.size(); i++) {
+        int currentBiggestLength = 0;
+        for (int j = 0; j < data.size(); j++) {
+            currentBiggestLength = max(currentBiggestLength, (int) data[j][columns[i]].length());
+        }
+        biggestColName.push_back(currentBiggestLength);
+    }
+
+    content += indent;
+    for (int i = 0; i < rows.size(); i++) {
+        content += rows[i];
+        for (int j = 0; j < biggestColName[i] - rowsLength[i]; j++) {
+            content += " ";
+        }
+        content += betweenSpace;
+    }
+    content += "\n";
+
+    content += indent;
+    for (int i = 0; i < rows.size(); i++) {
+        for (int j = 0; j < max(rowsLength[i], biggestColName[i]) + betweenSpace.length() - (i == rows.size() - 1 ? 2 : 0); j++) {
+            content += "_";
+        }
+    }
+    content += "\n\n";
+    int number = 1;
+    for (int i = 0; i < data.size(); i++) {
+
+        auto appendRow = [&](int i){
+                    if (addNumbers) {
+           for(int l = 0; l < (indent.length() - to_string(number).length()) - 1; l++){
+                content += " ";
+            }
+            content += to_string(number) + " ";
+
+        }else{
+            content += indent;
+        }
+            for (int j = 0; j < columns.size(); j++) {
+                content += data[i][columns[j]];
+                for (int k = 0; k < (max(rowsLength[j], biggestColName[j]) - data[i][columns[j]].length()) + betweenSpace.length(); k++) {
+                    content += " ";
+                }
+            }
+            content += "\n\n";
+            number++;
+        };
+        if(filter == nullptr){
+            appendRow(i);
+        }else{
+            if(filter(data[i])){
+                appendRow(i);
+            }
+        }
+    }
+
+    return content;
+}
 
 int main() {
 
@@ -55,7 +150,7 @@ int main() {
 void init() {
     system("cls");
     logo();
-    menu({"Login", "Register"});
+    menu({"Login", "Register", "Exit"});
     lineSpacing(1);
 
     while(true) {
@@ -65,6 +160,8 @@ void init() {
                 return;
             case 2:
                 registerUser();
+                return;
+            case 3:
                 return;
             default:
                 inValidInput("Invalid Input. Please Try Again.");
@@ -86,7 +183,8 @@ void login() {
     minMaxRule(MIN_LENGTH, MAX_LENGTH, password);
 
     if(isLogin(username, password)) {
-        print("login", {"text", GREEN});
+        setUserData(username, typeClient(username));
+        home();
     }else {
         system("cls");
         print("The Username Or Password Is Incorrect", {"text", RED});
@@ -123,6 +221,7 @@ void registerUser() {
         print("Username Is Already Taken", {"text", RED});
         lineSpacing(2);
         username = read<string>("Please Create Your Username: ");
+        minMaxRule(MIN_LENGTH, MAX_LENGTH, username);
     }
 
     lineSpacing(1);
@@ -131,7 +230,10 @@ void registerUser() {
 
     ofstream usersFile("users.txt", ios::app);
     usersFile << username << " " << password << " " << type << '\n';
+    usersFile.close();
 
+    setUserData(username, type);
+    home();
 }
 
 bool isUsernameTaken(string username) {
@@ -156,6 +258,296 @@ bool isLogin(string username, string password) {
     }
 
     return false;
+}
+
+string typeClient(string username) {
+    ifstream usersFile("users.txt");
+    string fileUsername, filePassword, fileType;
+
+    while(usersFile >> fileUsername >> filePassword >> fileType) {
+        if(fileUsername == username)
+            return fileType;
+    }
+}
+
+void setUserData(string username, string type) {
+    userDataType newUser;
+    newUser.username = username;
+    newUser.type = type;
+
+    userData.push_back(newUser);
+}
+
+void home() {
+    if(userData[0].type == "ADMIN")
+        dashboardAdmin();
+    else
+        dashboardUser();
+}
+
+void dashboardAdmin() {
+    system("cls");
+    logo();
+    print("Welcome back " + userData[0].username, {"text", GREEN});
+    lineSpacing(3);
+    menu({"Handling Tournament", "Edit Tournament Games", "Exit"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Please Choose An Option: ")) {
+            case 1:
+                tournamentHandler();
+                return;
+            case 2:
+                cout << "dashboardUser";
+                return;
+            case 3:
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+
+}
+
+void tournamentHandler() {
+    system("cls");
+    getGames();
+    print(dynamicTable(games, {"Team One", "Team Two", "Result", "Status"}, {0,1,2,3}), {"text", WHITE});
+    lineSpacing(2);
+
+    if(organizingTournament() == "DISABLE") {
+        menu({"Add New Game", "Activate The Tournament", "Delete All Games", "Exit"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1:
+                    addNewGame();
+                    return;
+                case 2:
+                    activeTournament();
+                    return;
+                case 3:
+                    deleteAllGames();
+                    return;
+                case 4:
+                    dashboardAdmin();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    } else if(organizingTournament() == "ACTIVE") {
+        menu({"Delete The Tournament", "Exit"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1:
+                    disableTournament();
+                    return;
+                case 2:
+                    dashboardAdmin();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+
+}
+
+void getGames() {
+    games.clear();
+    ifstream gamesFile("games.txt");
+    string teamOne, teamTwo, goalTeamOne, goalTeamTwo, status;
+    int counter = 1;
+
+    while(gamesFile >> teamOne >> teamTwo >> goalTeamOne >> goalTeamTwo >> status) {
+        games.push_back({teamOne, teamTwo, goalTeamOne + " : " + goalTeamTwo, status});
+        counter++;
+    }
+
+    gamesFile.close();
+}
+
+void addNewGame() {
+    system("cls");
+    lineSpacing(1);
+    string teamOne = read<string>("Please Enter Team One Name: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, teamOne);
+    lineSpacing(1);
+    string teamTwo = read<string>("Please Enter Team Two Name: ");
+    minMaxRule(MIN_LENGTH, MAX_LENGTH, teamTwo);
+    lineSpacing(1);
+    int goalTeamOne = read<int>("Please Enter Team One Goals: ");
+    minMaxRule(0, 30, goalTeamOne);
+    lineSpacing(1);
+    int goalTeamTwo = read<int>("Please Enter Team Two Goals: ");
+    lineSpacing(1);
+    minMaxRule(0, 30, goalTeamTwo);
+    print(teamOne + " " + to_string(goalTeamOne) + " : " + to_string(goalTeamTwo) + " " + teamTwo, {"text", WHITE});
+    lineSpacing(2);
+
+    menu({"Yes", "No"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Are You Sure About The Team Registration: ")) {
+            case 1: {
+                ofstream gamesFile("games.txt", ios::app);
+                gamesFile << teamOne << " " << teamTwo << " " << goalTeamOne << " " << goalTeamTwo << " " << "OPEN" << '\n';
+                gamesFile.close();
+                tournamentHandler();
+                return;
+            } case 2:
+                tournamentHandler();
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+}
+
+string organizingTournament() {
+    ifstream organizingTournamentFile("organizingTournament.txt");
+    string status;
+
+    while(organizingTournamentFile >> status) {
+        return status;
+    }
+}
+
+void activeTournament() {
+    system("cls");
+
+    if(isPowerTwo(games.size())) {
+        print(dynamicTable(games, {"Team One", "Team Two", "Result", "Status"}, {0,1,2,3}), {"text", WHITE});
+        lineSpacing(2);
+
+        menu({"Yes", "No"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Are You Sure To Active The Tournament: ")) {
+                case 1: {
+                    clearTextfile("organizingTournament.txt");
+                    ofstream organizingTournamentFile("organizingTournament.txt");
+                    organizingTournamentFile << "ACTIVE";
+                    organizingTournamentFile.close();
+                    tournamentHandler();
+                    return;
+                }
+                case 2:
+                    tournamentHandler();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+
+    }else {
+        print("The Number Of Teams must Be a Power Of Two", {"error", RED});
+        lineSpacing(2);
+
+        menu({"Add New Game", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Are You Sure To Active The Tournament: ")) {
+                case 1:
+                    addNewGame();
+                    return;
+                case 2:
+                    tournamentHandler();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+
+}
+
+void disableTournament() {
+    system("cls");
+
+    menu({"Yes", "No"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Are You Sure To Delete? All Game Data Will Be Deleted: ")) {
+            case 1: {
+                clearTextfile("organizingTournament.txt");
+                ofstream organizingTournamentFile("organizingTournament.txt");
+                organizingTournamentFile << "DISABLE";
+                organizingTournamentFile.close();
+                clearTextfile("games.txt");
+                tournamentHandler();
+                return;
+            }
+            case 2:
+                tournamentHandler();
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+}
+
+void deleteAllGames() {
+    system("cls");
+
+    if(games.size()) {
+        menu({"Yes", "No"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Are You Sure To Delete All Games: ")) {
+                case 1: {
+                    clearTextfile("games.txt");
+                    tournamentHandler();
+                    return;
+                }
+                case 2:
+                    tournamentHandler();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }else {
+        print("There Is No Game To Delete", {"error", RED});
+        lineSpacing(2);
+
+        menu({"Add New Game", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Are You Sure To Active The Tournament: ")) {
+                case 1:
+                    addNewGame();
+                    return;
+                case 2:
+                    tournamentHandler();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+}
+
+void dashboardUser() {
+    system("cls");
+    logo();
+    cout << "dashboardUser";
+}
+
+void clearTextfile(string nameFile) {
+    ofstream file(nameFile, ios::out | ios::trunc);
+    file.close();
 }
 
 template <typename T>
@@ -243,4 +635,54 @@ void minMaxRule(int minLength, int maxLength, string &variable) {
         variable = read<string>("Please Try Again: ");
         lengthVar = variable.length();
     }
+}
+
+void minMaxRule(int minLength, int maxLength, int &variable) {
+    int lengthVar = intLength(variable);
+
+    while(minLength > lengthVar || maxLength < lengthVar) {
+        lineSpacing(1);
+
+        if(minLength > lengthVar) {
+            print("Input Length must Be Greater Than " + to_string(minLength), {"text", RED});
+        }else {
+            print("Input Length must Be Less Than " + to_string(maxLength), {"text", RED});
+        }
+
+        lineSpacing(2);
+        variable = read<int>("Please Try Again: ");
+        lengthVar = intLength(variable);
+    }
+}
+
+string capitalizeText(string text) {
+    string capitalizeText;
+
+    for(char letter: text) {
+        capitalizeText += toupper(letter);
+    }
+
+    return capitalizeText;
+}
+
+int intLength(int number){
+    int length = 1;
+
+    while(number /= 10){
+        length++;
+    }
+
+    return length;
+}
+
+
+bool isPowerTwo(int number) {
+    if (number <= 0)
+        return false;
+
+    while(number % 2 == 0) {
+        number /= 2;
+    }
+
+    return number == 1;
 }
