@@ -1055,7 +1055,7 @@ bool isPowerTwo(int number) {
 
 void clearFunc() {
     #ifdef _WIN32
-        clearFunc();
+        system("cls");
     #else
         system("clear");
     #endif
