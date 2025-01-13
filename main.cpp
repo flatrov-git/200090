@@ -163,7 +163,7 @@ int main() {
 // DEFINITION FUNCTIONS //
 
 void init() {
-    system("cls");
+    clearFunc();
     logo();
     menu({"Login", "Register", "Exit"});
     lineSpacing(1);
@@ -186,7 +186,7 @@ void init() {
 }
 
 void login() {
-    system("cls");
+    clearFunc();
     logo();
     print("LOGIN", {"text", CYAN});
     lineSpacing(2);
@@ -201,7 +201,7 @@ void login() {
         setUserData(username, typeClient(username));
         home();
     }else {
-        system("cls");
+        clearFunc();
         print("The Username Or Password Is Incorrect", {"text", RED});
         lineSpacing(2);
         menu({"Try Again", "Register"});
@@ -222,7 +222,7 @@ void login() {
 }
 
 void registerUser() {
-    system("cls");
+    clearFunc();
     logo();
     print("REGISTER", {"text", CYAN});
     lineSpacing(2);
@@ -301,7 +301,7 @@ void home() {
 }
 
 void dashboardAdmin() {
-    system("cls");
+    clearFunc();
     logo();
     print("Welcome back " + userData[0].username, {"text", GREEN});
     lineSpacing(3);
@@ -327,7 +327,7 @@ void dashboardAdmin() {
 }
 
 void tournamentHandler() {
-    system("cls");
+    clearFunc();
     getGames();
     print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
     lineSpacing(2);
@@ -389,7 +389,7 @@ void getGames() {
 }
 
 void addNewGame() {
-    system("cls");
+    clearFunc();
     lineSpacing(1);
     string teamOne = read<string>("Please Enter Team One Name: ");
     minMaxRule(MIN_LENGTH, MAX_LENGTH, teamOne);
@@ -436,7 +436,7 @@ string organizingTournament() {
 }
 
 void activeTournament() {
-    system("cls");
+    clearFunc();
 
     if(isPowerTwo(games.size())) {
         print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
@@ -487,7 +487,7 @@ void activeTournament() {
 }
 
 void disableTournament() {
-    system("cls");
+    clearFunc();
 
     menu({"Yes", "No"});
     lineSpacing(1);
@@ -514,7 +514,7 @@ void disableTournament() {
 }
 
 void deleteAllGames() {
-    system("cls");
+    clearFunc();
 
     if(games.size()) {
         menu({"Yes", "No"});
@@ -557,7 +557,7 @@ void deleteAllGames() {
 }
 
 void editGames() {
-    system("cls");
+    clearFunc();
 
     if(organizingTournament() == "ACTIVE") {
         getGames();
@@ -569,7 +569,7 @@ void editGames() {
         int index = gameId - 1;
 
         if(games[index][4] == "FINISHED") {
-            system("cls");
+            clearFunc();
             lineSpacing(1);
             print("The Selected Game Is Over", {"error", RED});
             lineSpacing(2);
@@ -591,7 +591,7 @@ void editGames() {
             }
         }
 
-        system("cls");
+        clearFunc();
         int goalTeamOne = read<int>("Please Enter Team One Goals: ");
         minMaxRule(stoi(games[index][2]), 30, goalTeamOne);
         lineSpacing(1);
@@ -674,7 +674,7 @@ void changeStatusPredictionGame(int index) {
 }
 
 void dashboardUser() {
-    system("cls");
+    clearFunc();
     logo();
     print("Welcome back " + userData[0].username, {"text", GREEN});
     lineSpacing(3);
@@ -717,7 +717,7 @@ void dashboardUser() {
 }
 
 void gamePrediction() {
-    system("cls");
+    clearFunc();
     getGames();
     getGamePrediction();
     print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
@@ -728,7 +728,7 @@ void gamePrediction() {
     int index = gameId - 1;
 
     if(games[index][4] == "FINISHED") {
-        system("cls");
+        clearFunc();
         lineSpacing(1);
         print("The Selected Game Is Over", {"error", RED});
         lineSpacing(2);
@@ -751,7 +751,7 @@ void gamePrediction() {
     }
 
     while(isGameTaken(userData[0].username, games[index][0], games[index][1])) {
-        system("cls");
+        clearFunc();
         lineSpacing(1);
         print("You Already Predicted This Game", {"error", RED});
         lineSpacing(2);
@@ -773,7 +773,7 @@ void gamePrediction() {
         }
     }
 
-    system("cls");
+    clearFunc();
     int goalTeamOne = read<int>("Please Enter Team One Goals: ");
     minMaxRule(stoi(games[index][2]), 30, goalTeamOne);
     lineSpacing(1);
@@ -847,7 +847,7 @@ bool isGameTaken(string username, string nameTeamOne, string nameTeamTwo) {
 }
 
 void userPointsHandler() {
-    system("cls");
+    clearFunc();
     getGamePredictionUser(userData[0].username);
     pointsHandler();
     print(dynamicTable(gamePredictionUserArray, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Score"}, {0,1,2,3,4}), {"text", WHITE});
@@ -911,7 +911,7 @@ string getPoint(string nameTeamOne, string nameTeamTwo, string goalTeamOne, stri
 }
 
 void exit() {
-    system("cls");
+    clearFunc();
     userData.clear();
     init();
 }
@@ -1055,7 +1055,7 @@ bool isPowerTwo(int number) {
 
 void clearFunc() {
     #ifdef _WIN32
-        system("cls");
+        clearFunc();
     #else
         system("clear");
     #endif
