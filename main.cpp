@@ -35,6 +35,8 @@ struct userDataType {
 
 vector<userDataType> userData;
 vector<vector<string>> games;
+vector<vector<string>> gamePredictionArray;
+vector<vector<string>> gamePredictionUserArray;
 
 // DECLARATION FUNCTIONS //
 
@@ -56,9 +58,16 @@ void disableTournament();
 void deleteAllGames();
 void editGames();
 void changeStateGame(int index);
+void changeStatusPredictionGame(int index);
 void dashboardUser();
 void gamePrediction();
 void getGamePrediction();
+void getGamePredictionUser(string username);
+void addGamePrediction(int index, int goalTeamOne, int goalTeamTwo);
+bool isGameTaken(string username, string nameTeamOne, string nameTeamTwo);
+void userPointsHandler();
+void pointsHandler();
+string getPoint(string nameTeamOne, string nameTeamTwo, string goalTeamOne, string goalTeamTwo);
 void exit();
 
 template <typename T> T read(string prompt);
@@ -74,6 +83,7 @@ void clearTextfile(string nameFile);
 string capitalizeText(string text);
 int intLength(int number);
 bool isPowerTwo(int number);
+void clearFunc();
 string dynamicTable(vector<vector<string>> data, vector<string> rows, vector<int> columns, bool (*filter) (const vector<string>&) = nullptr, bool addNumbers = true, string indent = "   ") {
     string content = "\n";
     string betweenSpace = "  ";
@@ -485,6 +495,7 @@ void disableTournament() {
     while(true) {
         switch(read<int>("Are You Sure To Delete? All Game Data Will Be Deleted: ")) {
             case 1: {
+                clearTextfile("gamePrediction.txt");
                 clearTextfile("organizingTournament.txt");
                 ofstream organizingTournamentFile("organizingTournament.txt");
                 organizingTournamentFile << "DISABLE";
@@ -631,6 +642,7 @@ void changeStateGame(int index) {
         switch(read<int>("Do You Want To Change The State Of The Game: ")) {
             case 1: {
                 games[index][4] = "FINISHED";
+                changeStatusPredictionGame(index);
                 return;
             }
             case 2:
@@ -639,6 +651,26 @@ void changeStateGame(int index) {
                 inValidInput("Invalid Input. Please Try Again.");
         }
     }
+}
+
+void changeStatusPredictionGame(int index) {
+    getGamePrediction();
+    int counter = 0;
+
+    for(vector<string> a: gamePredictionArray) {
+        if(a[1] == games[index][0] && a[2] == games[index][1])
+            gamePredictionArray[counter][5] = "FINISHED";
+
+        counter++;
+    }
+
+    clearTextfile("gamePrediction.txt");
+    ofstream gamePredictionFile("gamePrediction.txt");
+    for(vector<string> a: gamePredictionArray) {
+        gamePredictionFile << a[0] << " " << a[1] << " " << a[2] << " " << a[3] << " " << a[4] << " " << a[5] << '\n';
+    }
+
+    gamePredictionFile.close();
 }
 
 void dashboardUser() {
@@ -662,9 +694,19 @@ void dashboardUser() {
                     break;
                 }
             }
-            case 2:
-                cout << "My Points";
-                return;
+            case 2: {
+                getGamePredictionUser(userData[0].username);
+
+                if(gamePredictionUserArray.size()) {
+                    userPointsHandler();
+                    return;
+                }else {
+                    lineSpacing(1);
+                    print("You Have Not Made A Prediction Yet", {"error", RED});
+                    lineSpacing(2);
+                    break;
+                }
+            }
             case 3:
                 exit();
                 return;
@@ -677,12 +719,195 @@ void dashboardUser() {
 void gamePrediction() {
     system("cls");
     getGames();
+    getGamePrediction();
     print(dynamicTable(games, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Status"}, {0,1,2,3,4}), {"text", WHITE});
     lineSpacing(2);
+
+    int gameId = read<int>("Select The Game You Want To Prediction (Between 1 To " + to_string(games.size()) + ") : ");
+    minMaxRule(1, games.size(), gameId);
+    int index = gameId - 1;
+
+    if(games[index][4] == "FINISHED") {
+        system("cls");
+        lineSpacing(1);
+        print("The Selected Game Is Over", {"error", RED});
+        lineSpacing(2);
+        menu({"Try Again", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1: {
+                    gamePrediction();
+                    return;
+                }
+                case 2:
+                    dashboardUser();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+
+    while(isGameTaken(userData[0].username, games[index][0], games[index][1])) {
+        system("cls");
+        lineSpacing(1);
+        print("You Already Predicted This Game", {"error", RED});
+        lineSpacing(2);
+        menu({"Try Again", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1: {
+                    gamePrediction();
+                    return;
+                }
+                case 2:
+                    dashboardUser();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+
+    system("cls");
+    int goalTeamOne = read<int>("Please Enter Team One Goals: ");
+    minMaxRule(stoi(games[index][2]), 30, goalTeamOne);
+    lineSpacing(1);
+    int goalTeamTwo = read<int>("Please Enter Team Two Goals: ");
+    minMaxRule(stoi(games[index][3]), 30, goalTeamTwo);
+    lineSpacing(2);
+
+    print(games[index][0] + " " + to_string(goalTeamOne) + " : " + to_string(goalTeamTwo) + " " + games[index][1], {"text", WHITE});
+    lineSpacing(2);
+
+    menu({"Yes", "No"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Are You Sure About The Prediction: ")) {
+            case 1: {
+                addGamePrediction(index, goalTeamOne, goalTeamTwo);
+                dashboardUser();
+                return;
+            } case 2:
+                dashboardUser();
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
 }
 
 void getGamePrediction() {
+    gamePredictionArray.clear();
+    ifstream gamePredictionFile("gamePrediction.txt");
+    string username, teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode;
 
+    while(gamePredictionFile >> username >> teamOne >> teamTwo >> goalTeamOne >> goalTeamTwo >> mode) {
+        gamePredictionArray.push_back({username, teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode});
+    }
+
+    gamePredictionFile.close();
+}
+
+void getGamePredictionUser(string username) {
+    getGamePrediction();
+    gamePredictionUserArray.clear();
+
+    for(vector<string> a: gamePredictionArray) {
+        if(a[0] == username) {
+            string teamOne = a[1], teamTwo = a[2], goalTeamOne = a[3], goalTeamTwo = a[4], mode = a[5];
+            gamePredictionUserArray.push_back({teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode});
+        }
+    }
+}
+
+void addGamePrediction(int index, int goalTeamOne, int goalTeamTwo) {
+    ofstream gamePredictionFile("gamePrediction.txt", ios::app);
+    gamePredictionFile << userData[0].username << " " << games[index][0] << " " << games[index][1] << " " << goalTeamOne << " " << goalTeamTwo << " " << games[index][4] << '\n';
+
+    gamePredictionFile.close();
+}
+
+bool isGameTaken(string username, string nameTeamOne, string nameTeamTwo) {
+    ifstream gamePredictionFile("gamePrediction.txt");
+    string usernameFile, teamOne, teamTwo, goalTeamOne, goalTeamTwo, mode;
+
+    while(gamePredictionFile >> usernameFile >> teamOne >> teamTwo >> goalTeamOne >> goalTeamTwo >> mode) {
+        if(usernameFile == username && teamOne == nameTeamOne && teamTwo == nameTeamTwo)
+            return true;
+    }
+    gamePredictionFile.close();
+
+    return false;
+}
+
+void userPointsHandler() {
+    system("cls");
+    getGamePredictionUser(userData[0].username);
+    pointsHandler();
+    print(dynamicTable(gamePredictionUserArray, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Score"}, {0,1,2,3,4}), {"text", WHITE});
+    lineSpacing(2);
+
+    menu({"Change Sort", "Go Back"});
+    lineSpacing(1);
+
+    while(true) {
+        switch(read<int>("Please Choose An Option: ")) {
+            case 1: {
+                cout << "Sord Was Changed";
+                return;
+            } case 2:
+                dashboardUser();
+                return;
+            default:
+                inValidInput("Invalid Input. Please Try Again.");
+        }
+    }
+}
+
+void pointsHandler() {
+    int counter = 0;
+
+    for(vector<string> a: gamePredictionUserArray) {
+        if(a[4] == "OPEN")
+            gamePredictionUserArray[counter][4] = "-";
+        else
+            gamePredictionUserArray[counter][4] = getPoint(gamePredictionUserArray[counter][0], gamePredictionUserArray[counter][1], gamePredictionUserArray[counter][2], gamePredictionUserArray[counter][3]);
+
+        counter++;
+    }
+}
+
+string getPoint(string nameTeamOne, string nameTeamTwo, string goalTeamOne, string goalTeamTwo) {
+    getGames();
+    int miness;
+    int minessPrediction;
+
+    if(stoi(goalTeamOne) > stoi(goalTeamTwo))
+        minessPrediction = stoi(goalTeamOne) - stoi(goalTeamTwo);
+    else
+        minessPrediction = stoi(goalTeamTwo) - stoi(goalTeamOne);
+
+    for(vector<string> a: games) {
+        if(a[0] == nameTeamOne && a[1] == nameTeamTwo) {
+            if(stoi(a[2]) > stoi(a[3]))
+                miness = stoi(a[2]) - stoi(a[3]);
+            else
+                miness = stoi(a[3]) - stoi(a[2]);
+
+            if(a[2] == goalTeamOne && a[3] == goalTeamTwo)
+                return "3";
+            else if(miness == minessPrediction)
+                return "2";
+            else
+                return "0";
+        }
+    }
 }
 
 void exit() {
@@ -818,7 +1043,7 @@ int intLength(int number){
 
 
 bool isPowerTwo(int number) {
-    if (number <= 0)
+    if(number <= 0)
         return false;
 
     while(number % 2 == 0) {
@@ -826,4 +1051,12 @@ bool isPowerTwo(int number) {
     }
 
     return number == 1;
+}
+
+void clearFunc() {
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 }

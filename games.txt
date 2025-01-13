@@ -1,2 +1,2 @@
-barca bayern 4 0 OPEN
-united real 4 3 OPEN
+
+barca real 4 1 OPEN
