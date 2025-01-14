@@ -59,6 +59,12 @@ void deleteAllGames();
 void editGames();
 void changeStateGame(int index);
 void changeStatusPredictionGame(int index);
+bool gamesOver();
+void nextStepHandler();
+void newGameStep(int number);
+vector<vector<string>> getLastGames(int number, vector<vector<string>> games);
+void creatorGame(int numberOne, int numberTwo, vector<vector<string>> lastGames);
+string gameWinnir(vector<string> game);
 void dashboardUser();
 void gamePrediction();
 void getGamePrediction();
@@ -355,7 +361,7 @@ void tournamentHandler() {
             }
         }
     } else if(organizingTournament() == "ACTIVE") {
-        menu({"Delete The Tournament", "Exit"});
+        menu({"Delete The Tournament", "Go To Next Step", "Exit"});
         lineSpacing(1);
 
         while(true) {
@@ -363,7 +369,18 @@ void tournamentHandler() {
                 case 1:
                     disableTournament();
                     return;
-                case 2:
+                case 2: {
+                    if(gamesOver()) {
+                        nextStepHandler();
+                        return;
+                    }else {
+                        lineSpacing(1);
+                        print("All Games Must Be Finished To Go To Next Step", {"error", RED});
+                        lineSpacing(2);
+                        break;
+                    }
+                }
+                case 3:
                     dashboardAdmin();
                     return;
                 default:
@@ -452,6 +469,11 @@ void activeTournament() {
                     ofstream organizingTournamentFile("organizingTournament.txt");
                     organizingTournamentFile << "ACTIVE";
                     organizingTournamentFile.close();
+
+                    ofstream stepHandlerFile("stepHandler.txt");
+                    clearTextfile("stepHandler.txt");
+                    stepHandlerFile << games.size();
+                    stepHandlerFile.close();
                     tournamentHandler();
                     return;
                 }
@@ -497,6 +519,7 @@ void disableTournament() {
             case 1: {
                 clearTextfile("gamePrediction.txt");
                 clearTextfile("organizingTournament.txt");
+                clearTextfile("stepHandler.txt");
                 ofstream organizingTournamentFile("organizingTournament.txt");
                 organizingTournamentFile << "DISABLE";
                 organizingTournamentFile.close();
@@ -671,6 +694,81 @@ void changeStatusPredictionGame(int index) {
     }
 
     gamePredictionFile.close();
+}
+
+bool gamesOver() {
+    for(vector<string> a: games) {
+        if(a[4] == "OPEN")
+            return false;
+    }
+    return true;
+}
+
+void nextStepHandler() {
+    clearFunc();
+    ifstream stepHandlerFile("stepHandler.txt");
+    int number;
+    stepHandlerFile >> number;
+    stepHandlerFile.close();
+
+    if(number / 2) {
+        newGameStep(number);
+        clearTextfile("stepHandler.txt");
+        ofstream stepHandlerFile("stepHandler.txt");
+        stepHandlerFile << (number / 2);
+        stepHandlerFile.close();
+
+        tournamentHandler();
+        return;
+
+    }else {
+        print("The Tournament Ended With " + gameWinnir(games.back()) + " Winning", {"text", GREEN});
+
+        lineSpacing(2);
+
+        menu({"Delete The Tournament", "Go Back"});
+        lineSpacing(1);
+
+        while(true) {
+            switch(read<int>("Please Choose An Option: ")) {
+                case 1: {
+                    disableTournament();
+                    return;
+                } case 2:
+                    tournamentHandler();
+                    return;
+                default:
+                    inValidInput("Invalid Input. Please Try Again.");
+            }
+        }
+    }
+}
+
+void newGameStep(int number) {
+    vector<vector<string>> lastGames = getLastGames(number, games);
+    creatorGame(1, number, lastGames);
+}
+
+vector<vector<string>> getLastGames(int number, vector<vector<string>> games) {
+    return vector<vector<string>>(games.end() - number, games.end());
+}
+
+void creatorGame(int numberOne, int numberTwo, vector<vector<string>> lastGames) {
+    ofstream gamesFile("games.txt", ios::app);
+    gamesFile << gameWinnir(lastGames[numberOne - 1]) << " " << gameWinnir(lastGames[numberTwo - 1]) << " " << "0" << " " << "0" << " " << "OPEN" << '\n';
+    gamesFile.close();
+
+    if(numberTwo - numberOne == 1)
+        return;
+    else
+        creatorGame(numberOne + 1, numberTwo - 1, lastGames);
+}
+
+string gameWinnir(vector<string> game) {
+    if(game[2] > game[3])
+        return game[0];
+    else
+        return game[1];
 }
 
 void dashboardUser() {
@@ -859,7 +957,7 @@ void userPointsHandler() {
     while(true) {
         switch(read<int>("Please Choose An Option: ")) {
             case 1: {
-                cout << "Sord Was Changed";
+                userPointsHandler();
                 return;
             } case 2:
                 dashboardUser();
