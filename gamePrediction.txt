@@ -1,0 +1,2 @@
+ali bayern real 5 3 OPEN
+ali leverpol paris 5 2 FINISHED

@@ -1,0 +1,4 @@
+bayern real 4 2 OPEN
+leverpol paris 5 2 FINISHED
+united napole 3 1 OPEN
+porto inter 2 1 OPEN

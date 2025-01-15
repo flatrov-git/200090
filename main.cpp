@@ -3,6 +3,7 @@
 #include <vector>
 #include <limits>
 #include <fstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -37,6 +38,8 @@ vector<userDataType> userData;
 vector<vector<string>> games;
 vector<vector<string>> gamePredictionArray;
 vector<vector<string>> gamePredictionUserArray;
+
+bool sortHandling = true;
 
 // DECLARATION FUNCTIONS //
 
@@ -87,6 +90,7 @@ void minMaxRule(int minLength, int maxLength, string &variable);
 void minMaxRule(int minLength, int maxLength, int &variable);
 void clearTextfile(string nameFile);
 string capitalizeText(string text);
+vector<vector<string>> selectionSort(vector<vector<string>> arr, int index);
 int intLength(int number);
 bool isPowerTwo(int number);
 void clearFunc();
@@ -622,7 +626,9 @@ void editGames() {
         minMaxRule(stoi(games[index][3]), 30, goalTeamTwo);
         lineSpacing(2);
 
-        changeStateGame(index);
+        if(!(goalTeamOne == goalTeamTwo)){
+            changeStateGame(index);
+        }
         games[index][2] = to_string(goalTeamOne);
         games[index][3] = to_string(goalTeamTwo);
 
@@ -948,7 +954,7 @@ void userPointsHandler() {
     clearFunc();
     getGamePredictionUser(userData[0].username);
     pointsHandler();
-    print(dynamicTable(gamePredictionUserArray, {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Score"}, {0,1,2,3,4}), {"text", WHITE});
+    print(dynamicTable(selectionSort(gamePredictionUserArray, 4), {"Team One", "Team Two", "Goal Team One", "Goal Team Two", "Score"}, {0,1,2,3,4}), {"text", WHITE});
     lineSpacing(2);
 
     menu({"Change Sort", "Go Back"});
@@ -957,6 +963,7 @@ void userPointsHandler() {
     while(true) {
         switch(read<int>("Please Choose An Option: ")) {
             case 1: {
+                sortHandling = !sortHandling;
                 userPointsHandler();
                 return;
             } case 2:
@@ -1119,6 +1126,39 @@ void minMaxRule(int minAmount, int maxAmount, int &variable) {
     }
 }
 
+vector<vector<string>> selectionSort(vector<vector<string>> arr, int index) {
+    vector<vector<string>> sortedArr;
+
+    for(vector<string> game: arr) {
+        if(game[index] == "-")
+            sortedArr.push_back({game[0], game[1], game[2], game[3], "0"});
+        else
+            sortedArr.push_back(game);
+    }
+
+    int n = sortedArr.size();
+
+    for (int i = 0; i < n - 1; i++) {
+        int minIndex = i;
+        for (int j = i + 1; j < n; j++) {
+            if(sortHandling) {
+                if (stoi(sortedArr[j][index]) < stoi(sortedArr[minIndex][index])) {
+                    minIndex = j;
+                }
+            }else {
+                if (stoi(sortedArr[j][index]) > stoi(sortedArr[minIndex][index])) {
+                    minIndex = j;
+                }
+            }
+        }
+        if (minIndex != i) {
+            swap(sortedArr[i], sortedArr[minIndex]);
+        }
+    }
+
+    return sortedArr;
+}
+
 string capitalizeText(string text) {
     string capitalizeText;
 
@@ -1138,7 +1178,6 @@ int intLength(int number){
 
     return length;
 }
-
 
 bool isPowerTwo(int number) {
     if(number <= 0)
